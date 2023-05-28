@@ -205,6 +205,8 @@ export class ContainerComponent {
 }
 ```
 
+=> [StackBlitz](https://stackblitz.com/edit/stackblitz-starters-fcnmtk?file=src%2Fmain.ts)
+
 Maintenant imaginons qu'à l'utilisation on ait **besoin** d'une hauteur de 200px :
 
 ```ts
@@ -261,6 +263,8 @@ export class ContainerComponent {
   }
 }
 ```
+
+=> [StackBlitz](https://stackblitz.com/edit/stackblitz-starters-qzugpp?file=src%2Fmain.ts)
 
 Dans le code ci-dessus, qui fonctionne désormais comme voulu à l'origine, on a :
 
