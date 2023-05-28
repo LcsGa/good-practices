@@ -6,15 +6,26 @@
 
 ## Table des matières
 
-- [Généralités](#généralités)
-  - [Le nommage des fichiers](#le-nommage-des-fichiers)
-  - [Le découpage du code : **librairie** ou **application** ?](#le-découpage-du-code--librairie-ou-application-)
-- [Les templates HTML](#les-templates-html)
-  - [Les _inline_ templates](#les-inline-templates)
-  - [Le formatting](#le-formatting)
-  - [Styliser un composant lui-même](#styliser-un-composant-lui-même)
-- [Le pattern déclaratif](#le-pattern-déclaratif)
-  - [Pourquoi ?](#pourquoi-)
+- [Le guide du fronteux$ _(Angular v16 Edition)_](#le-guide-du-fronteux-angular-v16-edition)
+  - [Table des matières](#table-des-matières)
+  - [Généralités](#généralités)
+    - [Le nommage des fichiers](#le-nommage-des-fichiers)
+    - [Le découpage du code : **librairie** ou **application** ?](#le-découpage-du-code--librairie-ou-application-)
+  - [Les templates HTML](#les-templates-html)
+    - [Les _inline_ templates](#les-inline-templates)
+    - [Le formatting](#le-formatting)
+    - [Styliser un composant lui-même](#styliser-un-composant-lui-même)
+  - [Les styles CSS / SCSS](#les-styles-css--scss)
+    - [Les _inline_ styles](#les-inline-styles)
+    - [L'imbrication du code](#limbrication-du-code)
+    - [Le **BEM** (**B**lock **E**lement **M**odifier)](#le-bem-block-element-modifier)
+    - [Les variables SCSS](#les-variables-scss)
+  - [Les dernières fonctionnalités d'Angular 14+](#les-dernières-fonctionnalités-dangular-14)
+    - [Les composants, directives et pipes standalone](#les-composants-directives-et-pipes-standalone)
+    - [L'injection de dépendances](#linjection-de-dépendances)
+    - [Les guards, resolvers et interceptors fonctionnels](#les-guards-resolvers-et-interceptors-fonctionnels)
+  - [Le pattern déclaratif](#le-pattern-déclaratif)
+    - [Pourquoi ?](#pourquoi-)
 
 <br />
 
@@ -271,6 +282,285 @@ Dans le code ci-dessus, qui fonctionne désormais comme voulu à l'origine, on a
 - Retiré la `div` qui englobait `ng-content`
 - Mis l'élément hôte (soit `app-container`) en `display: block` pour que son mode d'affichage soit le même qu'une `div` (pour cela on utilise la `pseudo classe` angular `:host`)
 - Remis les classes de sévérité sur `:host` avec un `@HostBinding` pour lui binder directement la classe sélectionnée
+
+<br />
+<br />
+
+## Les styles CSS / SCSS
+
+### Les _inline_ styles
+
+Les questions et réponses pour inline styles sont strictement les mêmes que les [inline template](#les-inline-templates)
+
+> NB : Afin d'utiliser un autre langage que CSS pour de l'inline style, on peut ajouter l'option `inlineStyleLanguage: "scss"` au schematics des componsants dans `angular.json`
+
+<br />
+
+### L'imbrication du code
+
+C'est probablement la feature la plus intéressante de SASS (SCSS) et elle arrive bientôt en CSS natif !
+
+L'idée est de pouvoir imbriquer des styles CSS dans d'autres styles CSS !
+
+Par exemple si l'on souhaite avoir un élément parent `.parent` qui contient un élément enfant 1 `.child-1` ainsi qu'un enfant 2 `.child-2` on peut alors l'écrire de la sorte :
+
+```scss
+.parent {
+  .child {
+    &-1 {
+      // ...
+    }
+
+    &-2 {
+      // ...
+    }
+  }
+}
+```
+
+Le code ci-dessus correspond au CSS suivant (du moins, en attendant l'arrivée du nesting en CSS natif) :
+
+```css
+.parent .child-1 {
+  /* ... */
+}
+
+.parent .child-2 {
+  /* ... */
+}
+```
+
+Dans cet exemple, on pourrait penser que c'est plus rapide à écrire en CSS mais on doit alors tout répéter x fois, avec une possibilité de faire une faute de frappe ! Et ce cas n'est pas un cas réel, en temps normal les noms des classes sont un peu plus poussés !
+
+> NB : Le symbole `&` permet d'**hériter** du nom du parent, tel quel. Ainsi `.parent { &--warn }` corresond à `.parent--warn`
+>
+> NB 2 : Si l'on n'utilise pas `&` alors on se retrouve avec un espace entre parent et enfant
+
+<br />
+
+### Le **BEM** (**B**lock **E**lement **M**odifier)
+
+C'est une convention de nommage CSS qui permet :
+
+- De s'éviter de longues minutes de tortures pour trouver des noms qui vont bien à nos classes CSS
+- D'avoir un standard de nommage au sein d'une équipe
+- De n'utiliser que des classes et donc d'avoir un [spécificité](https://developer.mozilla.org/fr/docs/Web/CSS/Specificity) identique pour chaque élément, s'évitant ainsi les `!important` à outrance
+- De ne pas avoir trop de niveaux d'indentation
+
+Chacune des trois lettres corresponde à :
+
+- **B**lock :
+
+  Il s'agit d'un élément _de base_ tel qu'une `.card` par exemple
+
+- **E**lement :
+
+  Il s'agit d'un élément enfant d'un block tel que `.card__header`, `.card__content` ou encore `.card__footer`
+
+- **M**odifier :
+
+  Il s'agit d'une variation d'un block ou element de base comme par exemple `.card--dark`, `.card-content--small`, etc.
+
+Ce sytème de notation fonctionne particulièrement bien avec l'imbrication :
+
+```scss
+.card {
+  &--dark {
+    // ...
+  }
+
+  &__header {
+    // ...
+  }
+
+  &__content {
+    // ...
+
+    &--small {
+      // ...
+    }
+  }
+
+  &__footer {
+    // ...
+  }
+}
+```
+
+> NB : Pour le formating, on procédera strictement de la même manière que pour l'[html](#le-formatting)
+>
+> NB 2 : Envie d'en apprendre plus sur le [BEM](https://alticreation.com/bem-pour-le-css/) ?
+
+<br />
+
+### Les variables SCSS
+
+Bien qu'elles soient très utiles, il ne faut pas les utiliser à outrance, au détriment des variable CSS natives `--ma-variable-css`.
+
+Contrairement aux variables CSS (qui restent à _l'état de variable_ même au runtime les variables SCSS) les variables SCSS disparaissent à la transpilation (SCSS => CSS). Il est donc important de les utiliser avec modération, surtout pour du theming car inspecter des éléments via la devtool est bien plus frustrant que si l'on connaît d'un seul coup d'oeil la variable utilisé pour chaque composant
+
+En ayant cela en tête, on peut tout à fait utiliser les variables SCSS qui nous sont même d'une grande aide, dans bien des cas.
+
+On peut par exemple stocker le nom d'une classe, d'un id ou autre, afin de l'interpoler si besoin :
+
+```scss
+$uneClasse: ma-classe;
+
+.#{$uneClasse} {
+  // ...
+}
+```
+
+Elles sont aussi très utilies si l'on souhaite utiliser une boucle `@each` :
+
+```scss
+@each $severity in info, warn, error {
+  .mon-element--#{$severity} {
+    @if $severity == info {
+      // ...
+    } @else if $severity == warn {
+      // ...
+    } @else {
+      // ...
+    }
+  }
+}
+```
+
+<br />
+<br />
+
+## Les dernières fonctionnalités d'Angular 14+
+
+### Les composants, directives et pipes standalone
+
+Introduit en v14 et amélioré en v15, il est désormais possible d'utiliser des composants, directives et pipe an `standalone` grâce à la propriété du même nom au niveau des décorateurs.
+
+L'intérêt de ce mode est d'éliminer purement et simplement les modules angular, qui en plus d'être lourds à utiliser, n'encourageaient pas forcément aux bonnes pratiques (les [SCAM](https://sandroroth.com/blog/angular-shared-scam)s). De plus ils ajoutaient une couche de complexité pour les débutant sur le framework.
+
+Voici comment ils s'utilisent :
+
+```ts
+@Component({
+  selector: "app-component",
+  standalone: true,
+  imports: [], // les imports qu'on avait dans les @NgModule se font désormais via cette propriété
+  template: ""
+})
+export class AppComponent {}
+
+@Directive({
+  selector: "[appDirective]",
+  standalone: true,
+  imports: []
+})
+export class AppDirective  {}
+
+@Pipe({
+  name: "appPipe",
+  standalone: true,
+  imports: []
+})
+export AppPipe {}
+```
+
+> NB : Pour générer un projet donc les commandes `ng generate {component,directive,pipe}` créeront directement ces éléments en mode standalone, on peut le créer via `ng new <project-name> --standalone`. (Cette option deviendra le mode par défaut dans les versions futures d'angular)
+>
+> NB 2 : Il est tout à fait possible, si besoin, d'importer c'est éléments dans des `@NgModule`
+>
+> NB 3 : Angular à rajouté la commande `ng generate @angular/core:standalone` afin de migrer facilement d'une application utilisant des `@NgModule`s vers une appication en mode `standalone`
+>
+> NB 4 : En apprendre plus sur les [standalone components](https://angular.io/guide/standalone-components)
+
+<br />
+
+### L'injection de dépendances
+
+La v14 d'angular a vu arriver une nouvelle manière d'injecter des dépendances et il s'agit de la fonction `inject` !
+
+Cette fonction, en plus d'avoir le mérite d'être plus clair, surtout pour les débutants, est pleine d'avantages :
+
+- Elle peut s'utiliser à la fois dans un `constructor`, en variable de classe ou dans une `factory function` (Nous reviendrons sur ces `function`s plus tard)
+- Elle peut être utilisée pour ne récupérer qu'une valeur unique de ce que l'on injecte
+- Si l'on crée une `class` générique visant à être étendue dans une ou plusieurs classes filles, on n'évite les appels de la fonction `super` à qui l'on devait passer toutes les dépendances injectées.
+
+Voici quelques exemples :
+
+```ts
+// avant
+@Component({})
+export class MyComponent {
+  private readonly isLoggedIn: boolean;
+
+  constructor(userSerivce: UserService) {
+    this.isLoggedIn = userService.isLoggedIn;
+  }
+}
+
+// après
+@Component({ ... })
+export class MyComponent {
+  private readonly isLoggedIn = inject(UserService).isLoggedIn;
+}
+```
+
+```ts
+// avant
+class DefaultComponent {
+  constructor(private readonly router: Router) {}
+}
+
+@Component({ ... })
+export class MyComponent extends DefaultComponent {
+  constructor(router: Router) {
+    super(router);
+
+    // some needed logic within the constructor
+  }
+}
+
+// après
+class DefaultComponent {
+  private readonly router = inject(Router);
+}
+
+@Component({ ... })
+export class MyComponent extends DefaultComponent {
+  constructor() {
+    // some needed logic within the constructor
+  }
+}
+```
+
+NB : Bien que l'on pourrait tout à fait faire cohabiter les deux, il vaut mieux ne garder uniquement que la fonction `inject`, afin de garder une certaine cohérence dans toute l'application.
+
+<br />
+
+### Les guards, resolvers et interceptors fonctionnels
+
+Depuis la v15 d'angular, les guards, resolvers et interceptors en mode `class` sont devenus depracted au profit des `factory function`s et cela notamment grâce à la fonction `inject` !
+
+Voici ce que ça donne :
+
+```ts
+export const routes: Routes = [
+  {
+    path: "",
+    canActivate: [() => inject(UserService).loggedIn$], // fonction de type CanActivateFn
+    resolve: { user: () => inejct(UserService).user$ } // fonction de type ResolveFn
+  }
+];
+```
+
+```ts
+bootstrapApplication(App, {providers: [
+  provideHttpClient(
+    withInterceptors([(req, next) => next(req.clone({ setHeaders: /* ... */ }))]) // fonction de type HttpInterceptorFn
+  )
+]});
+```
+
+> NB : Il est évidemment possible de créer ces éléments à part et également de le faire via le CLI mis à jour !
 
 <br />
 <br />
