@@ -137,17 +137,6 @@ Ici aussi, il n'y aucune règle absolue mais pour garder une cohérence de forma
     <li>item 2</li>
     <li>item 3</li>
   </ul>
-
-  <!-- ou -->
-  <ul>
-    <li>item 1</li>
-
-    <li>item 2</li>
-
-    <li>item 3</li>
-  </ul>
-
-  <!-- etc. -->
   ```
 
   Exemple de code **correct** pour cette règle :
