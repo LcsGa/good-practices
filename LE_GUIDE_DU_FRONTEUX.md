@@ -1,7 +1,5 @@
 # Le guide du fronteux$ <small>_(Angular v16 Edition)_</small>
 
-<!-- ![Observables power!](https://i.imgflip.com/7n8y70.jpg) -->
-
 <br />
 
 ## Table des matières
@@ -22,10 +20,17 @@
     - [Les variables SCSS](#les-variables-scss)
   - [Les dernières fonctionnalités d'Angular 14+](#les-dernières-fonctionnalités-dangular-14)
     - [Les composants, directives et pipes standalone](#les-composants-directives-et-pipes-standalone)
+    - [Les keyword de visibilité](#les-keyword-de-visibilité)
     - [L'injection de dépendances](#linjection-de-dépendances)
     - [Les guards, resolvers et interceptors fonctionnels](#les-guards-resolvers-et-interceptors-fonctionnels)
+    - [Les inputs required](#les-inputs-required)
+    - [L'input binding des routes](#linput-binding-des-routes)
+    - [La primitive reactive `Signal`](#la-primitive-reactive-signal)
+  - [La programation réactive avec RxJS](#la-programation-réactive-avec-rxjs)
+    - [Quand utiliser / créer des observables ?](#quand-utiliser--créer-des-observables-)
+    - [Ce qu'il ne faut pas faire](#ce-quil-ne-faut-pas-faire)
   - [Le pattern déclaratif](#le-pattern-déclaratif)
-    - [Pourquoi ?](#pourquoi-)
+    - [Pourquoi l'utiliser ?](#pourquoi-lutiliser-)
 
 <br />
 
@@ -453,13 +458,29 @@ export class AppDirective  {}
 export AppPipe {}
 ```
 
-> NB : Pour générer un projet donc les commandes `ng generate {component,directive,pipe}` créeront directement ces éléments en mode standalone, on peut le créer via `ng new <project-name> --standalone`. (Cette option deviendra le mode par défaut dans les versions futures d'angular)
+> NB : Pour générer un projet dont les commandes `ng generate {component,directive,pipe}` créeront directement ces éléments en mode standalone, on peut le créer via `ng new <project-name> --standalone`. (Cette option deviendra le mode par défaut dans les versions futures d'angular)
 >
-> NB 2 : Il est tout à fait possible, si besoin, d'importer c'est éléments dans des `@NgModule`
+> NB 2 : Il est tout à fait possible, si besoin, d'importer des éléments standalone dans des `@NgModule`.
 >
 > NB 3 : Angular à rajouté la commande `ng generate @angular/core:standalone` afin de migrer facilement d'une application utilisant des `@NgModule`s vers une appication en mode `standalone`
 >
-> NB 4 : En apprendre plus sur les [standalone components](https://angular.io/guide/standalone-components)
+> NB 4 : Penser à retirer les `CommonModule`s des `imports` au profit des éléments standalone qui le composent.
+>
+> NB 5 : En apprendre plus sur les [standalone components](https://angular.io/guide/standalone-components).
+
+<br />
+
+### Les keyword de visibilité
+
+Depuis angular v14 on peut désormais utiliser des éléments `protected` dans les templates html.
+
+Ainsi pour tout ce que l'on veut :
+
+- Rendre public pour l'utiliser sur des `ViewChild` et autre : `public`
+- Utiliser des éléments dans le template html du composant : `protected`
+- N'utiliser des éléments qu'au sein du TS du composant: `private`
+
+> NB : Penser à bien rajouter `readonly` sur tout élément immuable.
 
 <br />
 
@@ -469,15 +490,15 @@ La v14 d'angular a vu arriver une nouvelle manière d'injecter des dépendances 
 
 Cette fonction, en plus d'avoir le mérite d'être plus clair, surtout pour les débutants, est pleine d'avantages :
 
-- Elle peut s'utiliser à la fois dans un `constructor`, en variable de classe ou dans une `factory function` (Nous reviendrons sur ces `function`s plus tard)
-- Elle peut être utilisée pour ne récupérer qu'une valeur unique de ce que l'on injecte
-- Si l'on crée une `class` générique visant à être étendue dans une ou plusieurs classes filles, on n'évite les appels de la fonction `super` à qui l'on devait passer toutes les dépendances injectées.
+- Elle peut s'utiliser à la fois dans un **constructor**, en **variable de classe** ou dans une **factory function** (Nous reviendrons sur ces `function`s plus tard)
+- Elle peut être utilisée pour ne récupérer qu'un seul élément de ce que l'on injecte
+- Si l'on crée une `class` générique visant à être étendue dans une ou plusieurs classes filles, on n'a plus besoin d'injecter des dépendances uniquement pour les passer a la fonction `super`.
 
 Voici quelques exemples :
 
 ```ts
 // avant
-@Component({})
+@Component({ ... })
 export class MyComponent {
   private readonly isLoggedIn: boolean;
 
@@ -521,7 +542,7 @@ export class MyComponent extends DefaultComponent {
 }
 ```
 
-NB : Bien que l'on pourrait tout à fait faire cohabiter les deux, il vaut mieux ne garder uniquement que la fonction `inject`, afin de garder une certaine cohérence dans toute l'application.
+NB : Bien que l'on pourrait tout à fait faire cohabiter les deux, il vaut mieux ne garder uniquement que la fonction `inject`, afin de garder une cohérence dans toute l'application.
 
 <br />
 
@@ -552,11 +573,182 @@ bootstrapApplication(App, {providers: [
 > NB : Il est évidemment possible de créer ces éléments à part et également de le faire via le CLI mis à jour !
 
 <br />
+
+### Les inputs required
+
+Une fonctionnalité très attendue, rajoutée en v16 qui permet d'indiquer qu'un input est obligatoirement requis :
+
+```ts
+@Component({ ... })
+export MyComponent {
+  @Input({ required: true }) myRequiredInput!: unknown; // Throw une erreur si le champs n'est pas correctement initialisé (idem lors du dev)
+}
+```
+
+<br />
+
+### L'input binding des routes
+
+La version 16 d'angular introduit une nouvelle fonctionnalité très attendu des développeurs : l'input binding des `path params`, `query params`, `data` et `resolvers`.
+
+Pour activer cette fonctionnalité dans une application il faut l'activer dans via la fonction `withComponentInputBinding` de `provideRouter`:
+
+```ts
+const appRoutes: Routes = [];
+bootstrapApplication(AppComponent, {
+  providers: [provideRouter(appRoutes, withComponentInputBinding())]
+});
+```
+
+Ensuite on récupère simplement les éléments cités précédemment via des `@Input` dans un `component` associé à la route :
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(
+      [
+        {
+          path: 'todos/:todoId',
+          data: { isSomething: true },
+          resolve: { resolveFoo: () => 'My resolved data' },
+          loadComponent: () => import('./app/todo/todo.component'),
+        },
+      ],
+      withComponentInputBinding()
+    ),
+  ],
+});
+
+// on /todos/1?searchTerm=angular
+@Component({
+  ...
+  standalone: true,
+})
+export default class TodoComponent {
+  @Input() todoId: string; // 1
+  @Input() isSomething: boolean; // true
+  @Input() resolveFoo: string; // My resolved data
+  @Input() searchTerm: string; // angular
+}
+```
+
+Afin de simplifier la récupération des `@Input` nous pouvons utiliser les types utilitaires `ExtractRouteInputs`, `ExtractRoutePath`, `ExtractRouteData` et `ExtractRouteResolve` de [@lcsga/ng-utils](https://www.npmjs.com/package/@lcsga/ng-utils) (du package `/types`) :
+
+```ts
+const todosRoute = {
+  path: 'todos/:todoId' as const, // `as const` est important ici pour extraire un type `todos/:todoId` et non string (afin de récupérer `todoId`)
+  data: { isSomething: true },
+  resolve: { resolveFoo: () => 'My resolved data' },
+  loadComponent: () => import('./app/todo/todo.component'),
+} satisfies Route; // `satisfies Route` est important pour laisser typescript inférer le type de todosRoute, tout en typand fortement l'objet
+
+export type TodosRouteInputs = ExtractRouteInputs<typeof todosRoute>;
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(
+      [todosRoute],
+      withComponentInputBinding()
+    ),
+  ],
+});
+
+// on /todos/1?searchTerm=angular
+@Component({
+  ...
+  standalone: true,
+})
+export default class TodoComponent implements TodosRouteInputs { // `implements nous force à rajouter todoId, isSomething, ainsi que resolveFoo avec les bons types associés`
+  @Input() todoId!: string;
+  @Input() isSomething!: boolean;
+  @Input() resolveFoo!: string;
+  @Input() searchTerm?: string; // searchTerm ne peut être extrait du type car il n'apparait que dans l'url
+}
+```
+
+<br />
+
+### La primitive reactive `Signal`
+
+Depuis la v16, angular introduit une nouvelle primitive (pour le moment en developer preview => plein de nouveautés encore à venir en v17+) : `Signal`.
+
+Le but étant de :
+
+- A terme faire de la détection de changement ultra fine, sans plus du tout passer par zone.js
+- Adoucir la courbe d'apprentissage pour les débutants => on peut faire du réactif syncrhone et relativement basique avec `Signal`
+- A terme faire disparaître la majorité des `life cycle hooks` que l'on connaît (grâce au [signal based components](https://github.com/angular/angular/discussions/49682))
+
+Son utilisation est relativement simple il suffit de :
+
+- Pour un `signal` "simple" :
+
+  ```ts
+  @Component({
+    ...
+    template: `{{ name() }}`
+  })
+  export class MyComponent {
+    name = signal('Lucas'); // Assez similaire à un BehaviorSubject
+  }
+  ```
+
+  > Un `signal` est de type `WritableSignal` : on peut le mettre à jour via `set`, `update` ou `mutate`
+
+- Pour un `signal` dérivé -> `computed` :
+
+  ```ts
+  @Component({
+    ...
+    template: `{{ fullName() }}`
+  })
+  export class MyComponent {
+    #lastName = signal('Garcia');
+    #firstName = signal('Lucas');
+    fullName = computed(() => `${this.#lastName()} ${this.#firstName()}`); // similaire à un `combineLatest` (avec quelques opérateurs en plus)
+  }
+  ```
+
+- Pour un `effect` en fonction d'un changement de valeur de `signal`s :
+
+  ```ts
+  @Component({
+    ...
+    template: `{{ fullName() }}`
+  })
+  export class MyComponent {
+    #lastName = signal('Garcia');
+    #firstName = signal('Lucas');
+    fullName = computed(() => `${this.#lastName()} ${this.#firstName()}`);
+
+    constructor() {
+      effect(() => console.log("Le nom complet de l'utilisateur est " + this.fullName()));
+    }
+  }
+  ```
+
+<br />
+<br />
+
+## La programation réactive avec RxJS
+
+![Observables power!](https://i.imgflip.com/7n8y70.jpg)
+
+### Quand utiliser / créer des observables ?
+
+Presque tout le temps ! Comme pour les promesses, quand on commence à utiliser des observables, on se rend rapidement compte qu'il faut en utiliser encore d'avantage !
+
+Puisqu'un observable reçoit x valeurs au cours du temps, on est obligés de partir d'une `source` de base, afin d'en récupérer sa valeur et d'en faire quelque chose d'autre !
+
+### Ce qu'il ne faut pas faire
+
+> A venir
+
+<br />
 <br />
 
 ## Le pattern déclaratif
 
-### Pourquoi ?
+### Pourquoi l'utiliser ?
 
 En entreprise nous travaillons sur de gros projets, qui grossissent vite... Et leur compléxité aussi !
 
