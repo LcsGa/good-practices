@@ -18,6 +18,9 @@
     - [L'imbrication du code](#limbrication-du-code)
     - [Le **BEM** (**B**lock **E**lement **M**odifier)](#le-bem-block-element-modifier)
     - [Les variables SCSS](#les-variables-scss)
+  - [Le typage](#le-typage)
+    - [Enums ou Union types ?](#enums-ou-union-types-)
+    - [Créations de "models" avec Zod au lieu de TS](#créations-de-models-avec-zod-au-lieu-de-ts)
   - [Les dernières fonctionnalités d'Angular 14+](#les-dernières-fonctionnalités-dangular-14)
     - [Les composants, directives et pipes standalone](#les-composants-directives-et-pipes-standalone)
     - [Les keyword de visibilité](#les-keyword-de-visibilité)
@@ -117,7 +120,7 @@ Il n'y a pas de réponse absolue à cette question mais on peut l'utiliser :
     // Dans le template ci-dessus on ne passe pas par une interpolation
     // Angular {{ valeur }} ou [attribut]="valeur" mai bien par une
     // interpolation javascript ${} d'un template literal (avec ``)
-    template: `<p>Ma constante externe : ${UNE_CONSTANTE_EXTERNE}</p>`
+    template: `<p>Ma constante externe : ${UNE_CONSTANTE_EXTERNE}</p>`,
   })
   export class MonComponent {}
   ```
@@ -202,8 +205,8 @@ Prenons un composant très simple (pas forcément le plus pertinent): Un contene
       .container--error {
         background: #ffe7e6;
       }
-    `
-  ]
+    `,
+  ],
 })
 export class ContainerComponent {
   @Input() severity: "info" | "warn" | "error" = "info";
@@ -219,7 +222,7 @@ Maintenant imaginons qu'à l'utilisation on ait **besoin** d'une hauteur de 200p
   selector: "my-app",
   standalone: true,
   imports: [ContainerComponent],
-  template: `<app-container style="height: 200px">Ceci est un message de warning !</app-container>`
+  template: `<app-container style="height: 200px">Ceci est un message de warning !</app-container>`,
 })
 export class App {}
 ```
@@ -256,8 +259,8 @@ Pour y arriver on peut refactoriser le code de la manière suivante :
       :host.error {
         background: #ffe7e6;
       }
-    `
-  ]
+    `,
+  ],
 })
 export class ContainerComponent {
   @HostBinding("class")
@@ -424,6 +427,102 @@ Elles sont aussi très utilies si l'on souhaite utiliser une boucle `@each` :
 <br />
 <br />
 
+## Le typage
+
+### Enums ou Union types ?
+
+Le mieux est d'utiliser le plus possible des union types, pour plusieurs raisons :
+
+- Elles ne nécessitent pas d'imports pour les utiliser
+- Les IDEs savent très bien les autocompléter
+- Sur un `@Input` dans un template, aucune "difficulté" à les utiliser
+- Elles sont beaucoup plus flexibles et puissantes pour du typage
+- Elles peuvent être utilisées pour composer d'autres types
+- Les enums typescript ne sont pas aussi bien que les enums Java
+
+```ts
+// A ne pas faire
+enum State {
+  EMPTY,
+  PENDING,
+  DONE,
+  ERROR,
+}
+
+// A faire à la place
+type State = "empty" | "pending" | "done" | "error";
+
+// ---------------------------------------------------------------
+
+function doSomehting(state: State): void;
+
+// Avec une Enum
+doSomething(State.EMPTY); // nécessite l'import de State pour pas grand chose
+
+// Avec un union type
+doSomething("empty"); // aucun import nécessaire
+```
+
+> NB : Si le backend d'une API rest renvoie une enum, on peut toujours s'en sortir avec un union type + un objet
+
+```ts
+// Avec une enum
+enum State {
+  EMPTY, // 0
+  PENDING, // 1
+  DONE, // 2
+  ERROR, // 3
+}
+
+// Avec un union type
+type State = "empty" | "pending" | "done" | "error";
+
+const state: Record<State, number> = {
+  empty: 0,
+  pending: 1,
+  done: 2,
+  error: 3,
+};
+
+// Plus automatisé (pour le cas ci-dessus);
+const states = ["empty", "pending", "done", "error"] as const; // `as const` permet d'obtenir le type `reaondly ["empty", "pending", "done", "error"]` au lieu de `string[]`
+
+type State = (typeof states)[number];
+
+const state: Record<State, number> = Object.entries(states).reduce(
+  (state, [key, value]) => ({ ...state, [key]: value }),
+  {}
+);
+```
+
+<br />
+
+### Créations de "models" avec Zod au lieu de TS
+
+Passer par des `schemas` au lieu de types TS permet de :
+
+- Vérifier la validité d'un type au run time grâce à la méthode `parse()` (ce qui sert surtout à la reception d'un `json` d'une api rest ou autre)
+- De générer des mocks automatiquement grâce à la librairie [@anatine/zod-mock](https://www.npmjs.com/package/@anatine/zod-mock)
+
+```ts
+// Au lieu de
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// faire
+const UserSchema = z.object(
+  id: z.string().uuid()
+  name: z.string(),
+  email: z.string().email()
+);
+```
+
+<br />
+<br />
+
 ## Les dernières fonctionnalités d'Angular 14+
 
 ### Les composants, directives et pipes standalone
@@ -557,8 +656,8 @@ export const routes: Routes = [
   {
     path: "",
     canActivate: [() => inject(UserService).loggedIn$], // fonction de type CanActivateFn
-    resolve: { user: () => inejct(UserService).user$ } // fonction de type ResolveFn
-  }
+    resolve: { user: () => inejct(UserService).user$ }, // fonction de type ResolveFn
+  },
 ];
 ```
 
@@ -596,7 +695,7 @@ Pour activer cette fonctionnalité dans une application il faut l'activer dans v
 ```ts
 const appRoutes: Routes = [];
 bootstrapApplication(AppComponent, {
-  providers: [provideRouter(appRoutes, withComponentInputBinding())]
+  providers: [provideRouter(appRoutes, withComponentInputBinding())],
 });
 ```
 
@@ -784,7 +883,7 @@ interface User {
   imports: [
     /* imports */
   ],
-  templateUrl: "./user-table.component.html"
+  templateUrl: "./user-table.component.html",
 })
 export class UserTableComponent {
   #userService = inject(UserService);
@@ -871,7 +970,7 @@ Refacto du code précédent en mode déclaratif :
   imports: [
     /* imports */
   ],
-  templateUrl: "./user-table.component.html"
+  templateUrl: "./user-table.component.html",
 })
 export class UserTableComponent {
   #userService = inject(UserService);
