@@ -192,18 +192,18 @@ Prenons un composant très simple (pas forcément le plus pertinent): Un contene
       .container {
         padding: 0.5rem 1rem;
         border-radius: 8px;
-      }
 
-      .container--info {
-        background: #e9e9ff;
-      }
+        &--info {
+          background: #e9e9ff;
+        }
 
-      .container--warn {
-        background: #fff2e2;
-      }
+        &--warn {
+          background: #fff2e2;
+        }
 
-      .container--error {
-        background: #ffe7e6;
+        &--error {
+          background: #ffe7e6;
+        }
       }
     `,
   ],
@@ -246,18 +246,18 @@ Pour y arriver on peut refactoriser le code de la manière suivante :
         display: block;
         padding: 0.5rem 1rem;
         border-radius: 8px;
-      }
 
-      :host.info {
-        background: #e9e9ff;
-      }
+        &.info {
+          background: #e9e9ff;
+        }
 
-      :host.warn {
-        background: #fff2e2;
-      }
+        &.warn {
+          background: #fff2e2;
+        }
 
-      :host.error {
-        background: #ffe7e6;
+        &.error {
+          background: #ffe7e6;
+        }
       }
     `,
   ],
